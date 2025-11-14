@@ -29,8 +29,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.soundaction.ui.theme.AppTheme
-import com.example.soundaction.ui.theme.SoundActionTheme
+import com.example.soundaction.theme.AppTheme
+import com.example.soundaction.theme.SoundActionTheme
 object FontLoader {
     val googleFontFamily by lazy {
         FontFamily(

@@ -1,4 +1,4 @@
-package com.example.soundaction.ui.theme
+package com.example.soundaction.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.*
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import com.example.soundaction.ui.theme.*
 import kotlinx.coroutines.CoroutineStart
 
 @Immutable
