@@ -29,8 +29,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.soundaction.theme.AppTheme
-import com.example.soundaction.theme.SoundActionTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.soundaction.ui.theme.AppTheme
+import com.example.soundaction.ui.theme.SoundActionTheme
 object FontLoader {
     val googleFontFamily by lazy {
         FontFamily(
@@ -38,18 +41,47 @@ object FontLoader {
         )
     }
 }
+sealed class Screen(val route: String) {
+    data object Home : Screen("home")
+    data object Game : Screen("game")
+    data object Result : Screen("result")
+}
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             SoundActionTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-                    Column(
-                        modifier = Modifier.padding(innerPadding)
-                    ) {
+                val navController = rememberNavController()
+                NavHost(navController = navController, startDestination = Screen.Home.route) {
+                    composable(Screen.Home.route) {
+                        Scaffold(modifier = Modifier.fillMaxSize()
+                        ) { innerPadding ->
+                            Column(
+                                modifier = Modifier.padding(innerPadding)
+                            ) {
+                                MyVerticalLayout( onNavigateToDetails = {
+                                    navController.navigate(Screen.Game.route)
+                                })
+                            }
+                        }
+                    }
+                    composable(Screen.Game.route) {
                         GameScreen()
+                    }
+                    composable(Screen.Result.route){
+                        Scaffold(modifier = Modifier.fillMaxSize()
+                        ){ innerPadding ->
+                            Column (
+                                modifier = Modifier.padding(innerPadding)
+                            ) {
+                                ResultScreen( onNavigateToDetails = {
+                                    navController.navigate(Screen.Home.route) {
+                                        popUpTo(Screen.Home.route) { inclusive = true }
+                                    }
+                                })
+                            }
+                        }
                     }
                 }
             }
@@ -58,7 +90,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MyVerticalLayout() {
+fun MyVerticalLayout(onNavigateToDetails: () -> Unit) {
     val gradientStart = AppTheme.colors.gradientStart
     val gradientEnd = AppTheme.colors.gradientEnd
 
@@ -98,8 +130,7 @@ fun MyVerticalLayout() {
                 fontSize = 150.sp,
             )
             Button(
-
-                onClick = {},
+                onClick = onNavigateToDetails,
                 modifier = Modifier.size(width = 150.dp, height = 70.dp)
             ) {
                 Text(
@@ -116,6 +147,6 @@ fun MyVerticalLayout() {
 @Composable
 fun StartScreenPreview() {
     SoundActionTheme {
-        MyVerticalLayout()
+        MyVerticalLayout(onNavigateToDetails = {})
     }
 }
