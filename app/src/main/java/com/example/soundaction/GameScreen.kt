@@ -70,7 +70,7 @@ fun GameScreen() {
                     .weight(1f)
                     .background(Color.Black.copy(alpha = 0.2f))
             ) {
-                button()
+                ActionButtons()
             }
         }
     }
@@ -136,65 +136,24 @@ fun Line() {
         )
     }
 }
-
 @Composable
-fun button() {
+fun ActionButtons() {
     Row(
         modifier = Modifier.fillMaxSize()
     ) {
-        Button (
-            onClick = {
-
-            },
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue.copy(
-                    alpha = 0f
-                )
-            ),
-        ) {}
-
-        Button (
-            onClick = {},
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue.copy(
-                    alpha = 0f
-                )
-            ),
-        ) {}
-
-        Button (
-            onClick = {},
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue.copy(
-                    alpha = 0f
-                )
-            ),
-        ) {}
-
-        Button (
-            onClick = {},
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            shape = RoundedCornerShape(0.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Blue.copy(
-                    alpha = 0f
-                )
-            ),
-        ) {}
+        repeat(4) { // ループで4つのボタンを生成
+            Button(
+                onClick = { /* TODO: このレーンのクリック処理を実装 */ },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                shape = RoundedCornerShape(0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent // 透明であることが分かりやすいように Color.Transparent を使用
+                ),
+            ) {}
+        }
     }
 
 }
+
