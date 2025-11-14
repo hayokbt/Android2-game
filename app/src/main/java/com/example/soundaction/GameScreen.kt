@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -20,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.soundaction.ui.theme.AppTheme
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import com.example.soundaction.theme.AppTheme
 
 @Composable
 fun GameScreen() {
@@ -41,7 +44,7 @@ fun GameScreen() {
             )
     ) {
     //レーンの描画
-    Line()
+        Line()
 
     IconButton(
         onClick = {},
@@ -60,16 +63,14 @@ fun GameScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(4f)
-            ) {
-
-            }
+            ) {}
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
                     .background(Color.Black.copy(alpha = 0.2f))
             ) {
-
+                ActionButtons()
             }
         }
     }
@@ -135,3 +136,24 @@ fun Line() {
         )
     }
 }
+@Composable
+fun ActionButtons() {
+    Row(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        repeat(4) { // ループで4つのボタンを生成
+            Button(
+                onClick = { /* TODO: このレーンのクリック処理を実装 */ },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                shape = RoundedCornerShape(0.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent // 透明であることが分かりやすいように Color.Transparent を使用
+                ),
+            ) {}
+        }
+    }
+
+}
+
