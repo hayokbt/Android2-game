@@ -2,7 +2,9 @@ package com.example.soundaction
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Icon
@@ -27,14 +30,23 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.Dp
+import kotlin.math.abs
 
 @Composable
-fun GameScreen(viewModel: GameViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+fun GameScreen(viewModel: GameViewModel = viewModel()) {
+    var started by remember { mutableStateOf(false) }
+
     val gradientStart = AppTheme.colors.accentGradientStart
     val gradientEnd = AppTheme.colors.accentGradientEnd
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(
@@ -45,20 +57,40 @@ fun GameScreen(viewModel: GameViewModel = androidx.lifecycle.viewmodel.compose.v
                     )
                 )
             )
+            .clickable{
+                if (!started) {
+                    started = true
+                }
+            }
     ) {
-    //レーンの描画
-    Line()
+        val maxHeight = this.maxHeight
+        val hitLineY = maxHeight * 4 / 5
+        val hitWindow = maxHeight / 10
+        //レーンの描画
+        Line()
 
-    IconButton(
+            if (!started) {
+                Text("タップしてスタート", modifier = Modifier.align(Alignment.Center))
+            }
+
+            TileAnimationLayer(tiles = viewModel.tiles)
+
+            LaunchedEffect(started) {
+                if (started) {
+                    viewModel.startGame(maxHeight)
+                }
+            }
+
+        IconButton(
         onClick = {},
         modifier = Modifier
             .align(Alignment.TopEnd)
             .padding(15.dp)
-            .background(Color.White.copy(alpha = 0.6f), shape = androidx.compose.foundation.shape.CircleShape)
+            .background(Color.White.copy(alpha = 0.6f), shape = CircleShape)
             .size(40.dp)
-    ) {
-        Icon(Icons.Filled.Pause, contentDescription = "Pause")
-    }
+        ) {
+            Icon(Icons.Filled.Pause, contentDescription = "Pause")
+        }
         Column(
                 modifier = Modifier
         ) {
@@ -73,12 +105,28 @@ fun GameScreen(viewModel: GameViewModel = androidx.lifecycle.viewmodel.compose.v
                     .weight(1f)
                     .background(Color.Black.copy(alpha = 0.2f))
             ) {
-                ActionButtons { lanePressed ->
+                ActionButtons(hitLineY = hitLineY) { lanePressed ->
                     viewModel.tiles.forEachIndexed { index, tile ->
-//                        if (checkHit(tile.y, tile.lane, lanePressed)) {
-//                            viewModel.removeTile(index)
-//                            // TODO: スコア加算など
-//                        }
+                        if (!tile.isActive) return@forEachIndexed
+
+                        val checkHit = checkHit(
+                            tileY = tile.y,
+                            tileLane = tile.lane,
+                            pressedLane = lanePressed,
+                            hitLineY = hitLineY,
+                            hitWindow = hitWindow
+                        )
+
+                        when (checkHit) {
+                            // これから拡張（ボーナスなどができたら入れたい）
+                            in 1..3 -> {
+                                Log.d("checkHit", "checkHit=$checkHit")
+                                viewModel.deactivateTile(index)
+                            }
+                            0 -> {
+                                Log.d("checkHit", "checkHit=0")
+                            }
+                        }
                     }
                 }
             }
@@ -93,62 +141,29 @@ fun Line() {
     Row (
         modifier = Modifier.fillMaxSize()
     ){
-        //レーン 1
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        )
+        repeat(4) { index ->
+            //レーン
+            Box(
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+            )
 
-        //境界線 1
-        Spacer(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(dividerWidth)
-                .background(dividerColor)
-        )
-
-        //レーン 2
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        )
-
-        // 境界線 2
-        Spacer(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(dividerWidth)
-                .background(dividerColor)
-        )
-
-        //レーン 3
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        )
-
-        // 境界線 3
-        Spacer(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(dividerWidth)
-                .background(dividerColor)
-        )
-
-        // レーン 4
-        Box(
-            Modifier
-                .weight(1f)
-                .fillMaxHeight()
-        )
+            //境界線
+            if (index < 3) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .width(dividerWidth)
+                        .background(dividerColor)
+                )
+            }
+        }
     }
 }
 
 @Composable
-fun ActionButtons(onPress: (Int) -> Unit) {
+fun ActionButtons(hitLineY: Dp, onPress: (Int) -> Unit) {
     Row(modifier = Modifier.fillMaxSize()) {
         repeat(4) { lane ->
             Button(
@@ -157,11 +172,29 @@ fun ActionButtons(onPress: (Int) -> Unit) {
                     .weight(1f)
                     .fillMaxHeight(),
                 shape = RoundedCornerShape(0.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {}
         }
     }
 }
+
+
+fun checkHit(tileY: Dp, tileLane: Int, pressedLane: Int, hitLineY: Dp, hitWindow: Dp): Int {
+    val isLaneMatch = tileLane == pressedLane
+    val abs = abs((tileY - hitLineY).value)
+    val isYInRange = abs <= hitWindow.value
+    if (isLaneMatch && (abs < (hitWindow.value / 4))) {
+        return 3
+    } else if (isLaneMatch && (abs < (hitWindow.value / 2))) {
+        return 2
+    } else if (isLaneMatch && isYInRange) {
+        return 1
+    } else if (isLaneMatch) {
+        return 0
+    } else {
+        return -1
+    }
+}
+
+
 
