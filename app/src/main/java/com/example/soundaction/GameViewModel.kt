@@ -12,11 +12,14 @@ class GameViewModel : ViewModel() {
     private val _tiles = mutableStateListOf<TileState>()
     val tiles: List<TileState> = _tiles
 
-    val stepTimes = 2500
+    val stepTimes = 2857
     val noteTime = stepTimes / 5
-    private val scoreData = loadScore()
+    private var scoreData:List<Note> = emptyList()
     private var startTime = 0L
 
+    fun setScore(score: List<Note>) {
+        scoreData = score
+    }
     fun startGame(maxHeight: Dp) {
         startTime = System.currentTimeMillis()
         _tiles.clear()
