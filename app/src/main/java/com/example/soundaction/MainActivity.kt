@@ -29,11 +29,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType // ★追加
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument // ★追加
 import com.example.soundaction.ui.theme.AppTheme
 import com.example.soundaction.ui.theme.SoundActionTheme
+
 object FontLoader {
     val googleFontFamily by lazy {
         FontFamily(
@@ -41,11 +44,17 @@ object FontLoader {
         )
     }
 }
+
 sealed class Screen(val route: String) {
     data object Home : Screen("home")
     data object Game : Screen("game")
-    data object Result : Screen("result")
+    data object Result : Screen("result/{combo}/{perfect}/{great}/{good}/{lost}") {
+        fun createRoute(combo: Int, perfect: Int, great: Int, good: Int, lost: Int): String {
+            return "result/$combo/$perfect/$great/$good/$lost"
+        }
+    }
 }
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,32 +63,64 @@ class MainActivity : ComponentActivity() {
             SoundActionTheme {
                 val navController = rememberNavController()
                 NavHost(navController = navController, startDestination = Screen.Home.route) {
+
+                    // --- HOME ---
                     composable(Screen.Home.route) {
-                        Scaffold(modifier = Modifier.fillMaxSize()
-                        ) { innerPadding ->
-                            Column(
-                                modifier = Modifier.padding(innerPadding)
-                            ) {
-                                MyVerticalLayout( onNavigateToDetails = {
+                        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                            Column(modifier = Modifier.padding(innerPadding)) {
+                                MyVerticalLayout(onNavigateToDetails = {
                                     navController.navigate(Screen.Game.route)
                                 })
                             }
                         }
                     }
+
+                    // --- GAME ---
                     composable(Screen.Game.route) {
-                        GameScreen()
+                        // GameScreenに「終わった時の処理」を渡す
+                        GameScreen(
+                            onGameFinished = { combo, perfect, great, good, lost ->
+                                navController.navigate(
+                                    Screen.Result.createRoute(combo, perfect, great, good, lost)
+                                ) {
+                                    popUpTo(Screen.Home.route) { inclusive = false }
+                                }
+                            }
+                        )
                     }
-                    composable(Screen.Result.route){
-                        Scaffold(modifier = Modifier.fillMaxSize()
-                        ){ innerPadding ->
-                            Column (
-                                modifier = Modifier.padding(innerPadding)
-                            ) {
-                                ResultScreen( onNavigateToDetails = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = true }
+
+                    // --- RESULT ---
+                    composable(
+                        route = Screen.Result.route,
+                        // arguments = listOf(...) で囲む必要があります
+                        arguments = listOf(
+                            navArgument("combo") { type = NavType.IntType },
+                            navArgument("perfect") { type = NavType.IntType },
+                            navArgument("great") { type = NavType.IntType },
+                            navArgument("good") { type = NavType.IntType },
+                            navArgument("lost") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val combo = backStackEntry.arguments?.getInt("combo") ?: 0
+                        val perfect = backStackEntry.arguments?.getInt("perfect") ?: 0
+                        val great = backStackEntry.arguments?.getInt("great") ?: 0
+                        val good = backStackEntry.arguments?.getInt("good") ?: 0
+                        val lost = backStackEntry.arguments?.getInt("lost") ?: 0
+
+                        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                            Column(modifier = Modifier.padding(innerPadding)) {
+                                ResultScreen(
+                                    combo = combo,
+                                    perfect = perfect,
+                                    great = great,
+                                    good = good,
+                                    lost = lost,
+                                    onNavigateToDetails = {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Home.route) { inclusive = true }
+                                        }
                                     }
-                                })
+                                )
                             }
                         }
                     }
@@ -106,14 +147,15 @@ fun MyVerticalLayout(onNavigateToDetails: () -> Unit) {
                 )
             )
     ) {
-            IconButton(
-                onClick = {},
-                modifier = Modifier.align(Alignment.TopStart).padding(20.dp)
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = "設定")
-            }
+        IconButton(
+            onClick = {},
+            modifier = Modifier.align(Alignment.TopStart).padding(20.dp)
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "設定")
+        }
         Column(
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier
+                .align(Alignment.Center)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceEvenly

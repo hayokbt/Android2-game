@@ -24,7 +24,14 @@ import androidx.compose.ui.unit.sp
 import com.example.soundaction.ui.theme.AppTheme
 
 @Composable
-fun  ResultScreen(onNavigateToDetails: () -> Unit) {
+fun  ResultScreen(
+    combo: Int,
+    perfect: Int,
+    great: Int,
+    good: Int,
+    lost: Int,
+    onNavigateToDetails: () -> Unit
+) {
     val gradientStart = AppTheme.colors.gradientStart
     val gradientEnd = AppTheme.colors.gradientEnd
 
@@ -63,45 +70,45 @@ fun  ResultScreen(onNavigateToDetails: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Combo",
-                    fontSize = 50.sp
-                )
+                Text("MaxCombo", fontSize = 50.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "0",
-                    fontSize = 50.sp
-                )
+                Text(text = combo.toString(), fontSize = 50.sp)
             }
             Spacer(modifier = Modifier.fillMaxHeight(0.05f))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Perfect",
-                    fontSize = 50.sp
-                )
+                Text("Perfect", fontSize = 50.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "0",
-                    fontSize = 50.sp
-                )
+                Text(text = perfect.toString(), fontSize = 50.sp)
             }
             Spacer(modifier = Modifier.fillMaxHeight(0.05f))
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "Lost",
-                    fontSize = 50.sp
-                )
+                Text("Great", fontSize = 50.sp)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    "0",
-                    fontSize = 50.sp
-                )
+                Text(text = great.toString(), fontSize = 50.sp)
+            }
+            Spacer(modifier = Modifier.fillMaxHeight(0.05f))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Good", fontSize = 50.sp)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(text = good.toString(), fontSize = 50.sp)
+            }
+            Spacer(modifier = Modifier.fillMaxHeight(0.05f))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 30.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Lost", fontSize = 50.sp)
+                Spacer(modifier = Modifier.weight(1f))
+                Text(text = lost.toString(), fontSize = 50.sp)
             }
             Spacer(modifier = Modifier.fillMaxHeight(0.5f))
         }

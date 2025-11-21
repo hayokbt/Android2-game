@@ -17,31 +17,49 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import com.example.soundaction.ui.theme.AppTheme
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.soundaction.ui.theme.AppTheme
 import kotlin.math.abs
 
 @Composable
-fun GameScreen(viewModel: GameViewModel = viewModel()) {
+fun GameScreen(
+    viewModel: GameViewModel = viewModel(),
+    onGameFinished: (Int, Int, Int, Int, Int) -> Unit
+) {
     var started by remember { mutableStateOf(false) }
+
+    // ViewModelの状態を監視
+    val isFinished by viewModel.isGameFinished
+    val maxCombo by viewModel.maxCombo
+    val perfect by viewModel.perfect
+    val great by viewModel.great
+    val good by viewModel.good
+    val lost by viewModel.lost
+
+    // ゲーム終了フラグが true になったら通知する
+    LaunchedEffect(isFinished) {
+        if (isFinished) {
+            onGameFinished(maxCombo, perfect, great, good, lost)
+        }
+    }
 
     val gradientStart = AppTheme.colors.accentGradientStart
     val gradientEnd = AppTheme.colors.accentGradientEnd
@@ -57,7 +75,7 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                     )
                 )
             )
-            .clickable{
+            .clickable {
                 if (!started) {
                     started = true
                 }
@@ -66,33 +84,35 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
         val maxHeight = this.maxHeight
         val hitLineY = maxHeight * 4 / 5
         val hitWindow = maxHeight / 10
-        //レーンの描画
+
+        // レーンの描画
         Line()
 
-            if (!started) {
-                Text("タップしてスタート", modifier = Modifier.align(Alignment.Center))
-            }
+        if (!started) {
+            Text("タップしてスタート", modifier = Modifier.align(Alignment.Center))
+        }
 
-            TileAnimationLayer(tiles = viewModel.tiles)
+        TileAnimationLayer(tiles = viewModel.tiles)
 
-            LaunchedEffect(started) {
-                if (started) {
-                    viewModel.startGame(maxHeight)
-                }
+        LaunchedEffect(started) {
+            if (started) {
+                viewModel.startGame(maxHeight)
             }
+        }
 
         IconButton(
-        onClick = {},
-        modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(15.dp)
-            .background(Color.White.copy(alpha = 0.6f), shape = CircleShape)
-            .size(40.dp)
+            onClick = {},
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(15.dp)
+                .background(Color.White.copy(alpha = 0.6f), shape = CircleShape)
+                .size(40.dp)
         ) {
             Icon(Icons.Filled.Pause, contentDescription = "Pause")
         }
+
         Column(
-                modifier = Modifier
+            modifier = Modifier
         ) {
             Box(
                 modifier = Modifier
@@ -107,9 +127,10 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
             ) {
                 ActionButtons(hitLineY = hitLineY) { lanePressed ->
                     viewModel.tiles.forEachIndexed { index, tile ->
-                        if (!tile.isActive) return@forEachIndexed
+                        // 叩かれたやつ(isHit) や 非表示(isActive=false) は判定しない
+                        if (!tile.isActive || tile.isHit) return@forEachIndexed
 
-                        val checkHit = checkHit(
+                        val checkHitResult = checkHit(
                             tileY = tile.y,
                             tileLane = tile.lane,
                             pressedLane = lanePressed,
@@ -117,15 +138,9 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
                             hitWindow = hitWindow
                         )
 
-                        when (checkHit) {
-                            // これから拡張（ボーナスなどができたら入れたい）
-                            in 1..3 -> {
-                                Log.d("checkHit", "checkHit=$checkHit")
-                                viewModel.deactivateTile(index)
-                            }
-                            0 -> {
-                                Log.d("checkHit", "checkHit=0")
-                            }
+                        if (checkHitResult > 0) {
+                            Log.d("checkHit", "checkHit=$checkHitResult")
+                            viewModel.recordHit(index, checkHitResult)
                         }
                     }
                 }
@@ -138,18 +153,16 @@ fun GameScreen(viewModel: GameViewModel = viewModel()) {
 fun Line() {
     val dividerColor = Color.White.copy(alpha = 0.7f)
     val dividerWidth = 1.dp
-    Row (
+    Row(
         modifier = Modifier.fillMaxSize()
-    ){
+    ) {
         repeat(4) { index ->
-            //レーン
             Box(
                 Modifier
                     .weight(1f)
                     .fillMaxHeight()
             )
 
-            //境界線
             if (index < 3) {
                 Spacer(
                     modifier = Modifier
@@ -178,21 +191,19 @@ fun ActionButtons(hitLineY: Dp, onPress: (Int) -> Unit) {
     }
 }
 
-
 fun checkHit(tileY: Dp, tileLane: Int, pressedLane: Int, hitLineY: Dp, hitWindow: Dp): Int {
     val isLaneMatch = tileLane == pressedLane
-    val abs = abs((tileY - hitLineY).value)
-    val isYInRange = abs <= hitWindow.value
-    if (isLaneMatch && (abs < (hitWindow.value / 4))) {
-        return 3
-    } else if (isLaneMatch && (abs < (hitWindow.value / 2))) {
-        return 2
+    val absVal = abs((tileY - hitLineY).value)
+    val isYInRange = absVal <= hitWindow.value
+
+    if (isLaneMatch && (absVal < (hitWindow.value / 4))) {
+        return 3 // Perfect
+    } else if (isLaneMatch && (absVal < (hitWindow.value / 2))) {
+        return 2 // Great
     } else if (isLaneMatch && isYInRange) {
-        return 1
-    } else if (isLaneMatch) {
-        return 0
+        return 1 // Good
     } else {
-        return -1
+        return 0 // Miss or No Hit
     }
 }
 
